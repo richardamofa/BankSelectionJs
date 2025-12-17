@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Choose your bank • Savings App</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--muted:#9aa4b2;--accent:#1fbf6a;--glass:rgba(255,255,255,0.03)}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#e6eef6;background:linear-gradient(180deg,#071021 0%, #071726 100%);-webkit-font-smoothing:antialiased}
+    .wrap{max-width:420px;margin:48px auto;padding:20px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:16px;padding:18px;box-shadow:0 6px 24px rgba(2,6,23,0.6);}
+    h1{font-size:20px;margin:0 0 6px}
+    p.lead{margin:0 0 14px;color:var(--muted);font-size:13px}
+    .search{display:flex;gap:8px;margin-bottom:12px}
+    .search input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:14px}
+    .banks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .bank{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);cursor:pointer;border:1px solid transparent;transition:all .18s}
+    .bank:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(2,6,23,0.5)}
+    .bank.selected{border-color:rgba(31,191,106,0.28);box-shadow:0 8px 20px rgba(31,191,106,0.08);background:linear-gradient(180deg, rgba(31,191,106,0.04), rgba(255,255,255,0.01))}
+    .logo{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-weight:700}
+    .info{flex:1}
+    .name{font-size:14px;margin:0}
+    .small{font-size:12px;color:var(--muted);margin-top:3px}
+    .actions{display:flex;gap:10px;margin-top:14px}
+    .btn{flex:1;padding:12px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .btn.primary{background:var(--accent);color:#042017}
+    .hint{font-size:12px;color:var(--muted);margin-top:12px}
+    .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:12px}
+    @media (max-width:420px){.wrap{margin:20px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Choose your bank</h1>
+      <p class="lead">Select the bank you'd like to link — we'll only use it to move money into your savings vault.</p>
+
+      <div class="search">
+        <input id="search" placeholder="Search bank (e.g., GCB, Stanbic)" aria-label="Search banks" />
+        <button id="more" class="btn ghost">More</button>
+      </div>
+
+      <div id="banks" class="banks" role="list">
+        <!-- Banks will be injected by JS -->
+      </div>
+
+      <div class="actions">
+        <button id="not-listed" class="btn ghost">Bank not listed</button>
+        <button id="continue" class="btn primary" disabled>Continue</button>
+      </div>
+
+      <div class="hint">By continuing you agree to securely connect your bank via a read-only connection. We never store your PIN.</div>
+      <div class="footer">Need help? <a href="#" style="color:inherit;text-decoration:underline">Contact support</a></div>
+    </div>
+  </div>
+
+  <script>
+    const BANKS = [
+      {id: 'gcb', name: 'GCB Bank', subtitle: 'Ghana Commercial Bank'},
+      {id: 'ecobank', name: 'Ecobank', subtitle: 'Pan-African Bank'},
+      {id: 'stanbic', name: 'Stanbic Bank', subtitle: 'Standard Bank Group'},
+      {id: 'zenith', name: 'Zenith Bank', subtitle: 'Corporate & Retail'},
+      {id: 'access', name: 'Access Bank', subtitle: 'Access Bank Ghana'},
+      {id: 'uba', name: 'UBA', subtitle: 'United Bank for Africa'},
+      {id: 'absa', name: 'Absa', subtitle: 'Absa Ghana'},
+      {id: 'fidelity', name: 'Fidelity Bank', subtitle: 'Fidelity Bank Ghana'},
+      {id: 'calbank', name: 'CalBank', subtitle: 'Cal Bank PLC'},
+      {id: 'gtbank', name: 'GTBank', subtitle: 'Guaranty Trust Bank'}
+    ];
+
+    const banksEl = document.getElementById('banks');
+    const searchEl = document.getElementById('search');
+    const continueBtn = document.getElementById('continue');
+    const notListed = document.getElementById('not-listed');
+
+    let selected = null;
+
+    function makeLogo(id){
+      // Simple colored box with initials as placeholder logo
+      const initials = BANKS.find(b=>b.id===id)?.name.split(' ').map(w=>w[0]).slice(0,2).join('');
+      const colors = {gcb:'#0ea5a4', ecobank:'#f97316', stanbic:'#2563eb', zenith:'#ef4444', access:'#7c3aed', uba:'#f59e0b', absa:'#ef6c00', fidelity:'#10b981', calbank:'#0ea5a4', gtbank:'#3b82f6'};
+      const bg = colors[id]||'#64748b';
+      return `<div class="logo" style="background:${bg};color:white">${initials}</div>`;
+    }
+
+    function render(list){
+      banksEl.innerHTML = '';
+      list.forEach(bank=>{
+        const div = document.createElement('div');
+        div.className = 'bank';
+        div.setAttribute('role','listitem');
+        div.dataset.id = bank.id;
+        div.innerHTML = `
+          ${makeLogo(bank.id)}
+          <div class="info">
+            <p class="name">${bank.name}</p>
+            <div class="small">${bank.subtitle}</div>
+          </div>
+        `;
+        div.addEventListener('click',()=>selectBank(bank.id, div));
+        banksEl.appendChild(div);
+      });
+    }
+
+    function selectBank(id, el){
+      // clear previous
+      Array.from(banksEl.children).forEach(c=>c.classList.remove('selected'));
+      el.classList.add('selected');
+      selected = BANKS.find(b=>b.id===id);
+      continueBtn.disabled = false;
+      continueBtn.textContent = `Continue — ${selected.name}`;
+    }
+
+    function filter(q){
+      const filtered = BANKS.filter(b=> b.name.toLowerCase().includes(q) || b.subtitle.toLowerCase().includes(q) || b.id.includes(q) );
+      render(filtered);
+    }
+
+    searchEl.addEventListener('input', (e)=>filter(e.target.value.trim().toLowerCase()));
+
+    notListed.addEventListener('click', ()=>{
+      const name = prompt('Enter your bank name');
+      if(name){
+        // simple temporary entry
+        const id = 'custom_'+Date.now();
+        BANKS.unshift({id, name, subtitle:'Custom bank'});
+        render(BANKS);
+        // auto-select first
+        const first = banksEl.children[0];
+        selectBank(id, first);
+      }
+    });
+
+    continueBtn.addEventListener('click', ()=>{
+      if(!selected) return;
+      // In a real app you'd redirect to a secure bank-linking flow (e.g., Plaid, TrueLayer or local provider)
+      alert('You selected: ' + selected.name + '\nProceeding to connect your account...');
+      // Example: window.location.href = '/link-bank?bank='+selected.id;
+    });
+
+    // initial render
+    render(BANKS);
+  </script>
+</body>
+</html>
